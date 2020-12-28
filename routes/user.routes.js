@@ -15,5 +15,5 @@ module.exports = (app) => {
 
 	app.post('/users/:userId/wallet/:walletId', users.addBalance);
 
-	app.post('/users/:userId/wallet/:walletId', users.deductBalance);
+	/** app.post('/users/:userId/wallet/:walletId', users.deductBalance); **/
 }
