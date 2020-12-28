@@ -1,4 +1,6 @@
 const User = require('../models/user.model.js');
+const crypto = require('crypto');
+
 
 exports.create = (req, res) => {
    	if(!req.body.description){
@@ -112,16 +114,91 @@ exports.delete = (req, res) => {
 };
 
 exports.createWallet = (req, res) => {
+	User.findById(req.params.userId)
+	.then(user => {
+		if(!user){
+			return res.status(404).send({
+                		message: "User not found with id " + req.params.userId
+            		});
+		}
 
+		if(user.wallet && user.wallet.walletId){
+			return res.status(409).send({
+				message: "Wallet already exists in user with walletId " + user.wallet.walletId	
+			});
+		}
+
+		let wallet =  {
+                        walletId: crypto.randomBytes(12).toString('hex'),
+                        balance: 0
+                }
+
+		user.wallet = wallet;
+		user.save()
+                .then(data => {
+                	res.send({
+                        	message: "Wallet created successfully",
+                                data: data.wallet.walletId
+                        });
+               	}).catch(err => {
+                	res.status(500).send({
+                        	message: err.message || "Some error occurred while creating the Wallet."
+                        });
+                });
+	}).catch(err => {
+		if(err.kind === 'ObjectId') {
+            		return res.status(404).send({
+                		message: "User not found with id " + req.params.userId
+            		});                
+        	}
+        	return res.status(500).send({
+            		message: "Error updating user with id " + req.params.userId
+        	});
+	});
 };
 
 exports.addBalance = (req, res) => {
+	User.findById(req.params.userId)
+    		.then(user => {
+        		if(!user) {
+            			return res.status(404).send({
+                			message: "User not found with id " + req.params.userId
+            			});            
+        		}
+        		
+			if(!user.wallet.walletId){
+				return res.status(400).send({
+                                	message: "Wallet doesn't exists in user with userId " + req.params.userId
+                        	});	
+			}
 
+			user.wallet.balance += req.body.balance;
+			user.save()
+    			.then(data => {
+        			res.send({
+					message: "Balance added successfully",
+					data: data.wallet.balance
+				});
+    			}).catch(err => {
+        			res.status(500).send({
+            				message: err.message || "Some error occurred while adding the Balance."
+        			});
+    			});
+    		}).catch(err => {
+        		if(err.kind === 'ObjectId') {
+            			return res.status(404).send({
+                			message: "User not found with id " + req.params.userId
+            			});                
+        		}
+        		return res.status(500).send({
+            			message: "Error retrieving User with id " + req.params.userId
+        		});
+    		});
 };
 
-exports.deductBalance = (req, res) => {
+/** exports.deductBalance = (req, res) => {
 
-};
+}; **/
 
 
 
